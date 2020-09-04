@@ -96,11 +96,17 @@ TEST_F(CLASSNAME(WaitSetTestFixture, RMW_IMPLEMENTATION), wait_set_is_valid) {
 TEST_F(CLASSNAME(WaitSetTestFixture, RMW_IMPLEMENTATION), test_failed_resize) {
   // Initialize a wait set with a subscription and then resize it to zero.
   rcl_allocator_t allocator = get_failing_allocator();
+  // Avoid memory leak in this test.
+  allocator.deallocate = rcutils_get_default_allocator().deallocate;
+
   rcl_wait_set_t wait_set = rcl_get_zero_initialized_wait_set();
   set_failing_allocator_is_failing(allocator, false);
   rcl_ret_t ret =
     rcl_wait_set_init(&wait_set, 1, 1, 1, 1, 1, 0, context_ptr, allocator);
   EXPECT_EQ(RCL_RET_OK, ret) << rcl_get_error_string().str;
+
+  // Avoid memory leak in this test.
+  rcl_guard_condition_t * ptr_bak = (rcl_guard_condition_t * ) wait_set.guard_conditions;
 
   set_failing_allocator_is_failing(allocator, true);
   ret = rcl_wait_set_resize(&wait_set, 0, 1, 0, 0, 0, 0);
@@ -110,6 +116,9 @@ TEST_F(CLASSNAME(WaitSetTestFixture, RMW_IMPLEMENTATION), test_failed_resize) {
   set_failing_allocator_is_failing(allocator, false);
   ret = rcl_wait_set_fini(&wait_set);
   ASSERT_EQ(RCL_RET_OK, ret) << rcl_get_error_string().str;
+
+  // Free leaked memory
+  allocator.deallocate(ptr_bak, &allocator.state);
 }
 
 TEST_F(CLASSNAME(WaitSetTestFixture, RMW_IMPLEMENTATION), test_resize_to_zero) {
