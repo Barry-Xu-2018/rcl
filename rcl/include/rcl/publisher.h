@@ -429,6 +429,48 @@ RCL_WARN_UNUSED
 rcl_ret_t
 rcl_publisher_assert_liveliness(const rcl_publisher_t * publisher);
 
+/// Waits until all published message data were acknowledged or timeout.
+/**
+ * This function make sure that waits until all published message data
+ * were acknowledged by peer node or timeout.
+ *
+ * The unit of timeout is nanoseconds.
+ * If the timeout is negative then this function will block indefinitely until
+ * something in the wait set is valid or it is interrupted.
+ * If the timeout is 0 then this function will be non-blocking; checking what's
+ * ready now, but not waiting if nothing is ready yet.
+ * If the timeout is greater than 0 then this function will return after
+ * that period of time has elapsed or the wait set becomes ready, which ever
+ * comes first.
+ *
+ * <hr>
+ * Attribute          | Adherence
+ * ------------------ | -------------
+ * Allocates Memory   | No
+ * Thread-Safe        | Yes
+ * Uses Atomics       | No
+ * Lock-Free          | Yes
+ *
+ * \param[in] publisher handle to the publisher that needs to wait for all acked.
+ * \param[in] timeout If `NULL`, block indefinitely until all published message data
+ *   were acknowledged. If zero, do not block -- check only for immediately all published
+ *   message data. Else, this represents the maximum amount of time to wait for all published
+ *   message data were acknowledged.
+ * \return `RCL_RET_OK` if successful, or
+ * \return `RCL_RET_TIMEOUT` if wait timed out, or
+ * \return `RCL_RET_INVALID_ARGUMENT` if any arguments are invalid, or
+ * \return `RCL_RET_PUBLISHER_INVALID` if the publisher is invalid, or
+ * \return `RCL_RET_UNSUPPORTED` if the middleware does not support that feature, or
+ * \return `RCL_RET_ERROR` if an unspecified error occurs.
+ */
+
+RCL_PUBLIC
+RCL_WARN_UNUSED
+rcl_ret_t
+rcl_publisher_wait_for_all_acked(
+  const rcl_publisher_t * publisher,
+  int64_t timeout);
+
 /// Get the topic name for the publisher.
 /**
  * This function returns the publisher's internal topic name string.

@@ -24,6 +24,7 @@ extern "C"
 
 #include "rcl/allocator.h"
 #include "rcl/error_handling.h"
+#include "rcl/time.h"
 #include "rcl/node.h"
 #include "rcutils/logging_macros.h"
 #include "rcutils/macros.h"
@@ -299,6 +300,37 @@ rcl_publisher_assert_liveliness(const rcl_publisher_t * publisher)
   if (rmw_publisher_assert_liveliness(publisher->impl->rmw_handle) != RMW_RET_OK) {
     RCL_SET_ERROR_MSG(rmw_get_error_string().str);
     return RCL_RET_ERROR;
+  }
+  return RCL_RET_OK;
+}
+
+rcl_ret_t
+rcl_publisher_wait_for_all_acked(
+  const rcl_publisher_t * publisher,
+  int64_t timeout)
+{
+  if (!rcl_publisher_is_valid(publisher)) {
+    return RCL_RET_PUBLISHER_INVALID;  // error already set
+  }
+
+  rmw_time_t * timeout_argument = NULL;
+  rmw_time_t temporary_timeout_storage;
+  if (timeout == 0) {
+    // Then it is non-blocking, so set the temporary storage to 0, 0 and pass it.
+    temporary_timeout_storage.sec = 0;
+    temporary_timeout_storage.nsec = 0;
+    timeout_argument = &temporary_timeout_storage;
+  } else if (timeout > 0) {
+    temporary_timeout_storage.sec = RCL_NS_TO_S(timeout);
+    temporary_timeout_storage.nsec = timeout % 1000000000;
+    timeout_argument = &temporary_timeout_storage;
+  }
+
+  rmw_ret_t ret = rmw_publisher_wait_for_all_acked(
+    publisher->impl->rmw_handle, timeout_argument);
+  if (ret != RMW_RET_OK) {
+    RCL_SET_ERROR_MSG(rmw_get_error_string().str);
+    return rcl_convert_rmw_ret_to_rcl_ret(ret);
   }
   return RCL_RET_OK;
 }
