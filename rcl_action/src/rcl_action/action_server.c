@@ -168,6 +168,45 @@ rcl_action_server_init(
   SERVICE_INIT(cancel);
   SERVICE_INIT(result);
 
+  // introspection for goal service
+  rcl_publisher_options_t pub_opts = rcl_publisher_get_default_options();
+  pub_opts.qos = rmw_qos_profile_system_default;
+
+  ret = rcl_service_configure_service_introspection(
+    &action_server->impl->goal_service,
+    node,
+    clock,
+    type_support->goal_service_type_support,
+    pub_opts,
+    RCL_SERVICE_INTROSPECTION_CONTENTS);
+  if (RCL_RET_OK != ret) {
+    printf("Fail to call rcl_service_configure_service_introspection for goal\n");
+  }
+
+  // introspection for cancel service
+  ret = rcl_service_configure_service_introspection(
+    &action_server->impl->cancel_service,
+    node,
+    clock,
+    type_support->cancel_service_type_support,
+    pub_opts,
+    RCL_SERVICE_INTROSPECTION_CONTENTS);
+  if (RCL_RET_OK != ret) {
+    printf("Fail to call rcl_service_configure_service_introspection for cancel\n");
+  }
+
+  // introspection for result service
+  ret = rcl_service_configure_service_introspection(
+    &action_server->impl->result_service,
+    node,
+    clock,
+    type_support->result_service_type_support,
+    pub_opts,
+    RCL_SERVICE_INTROSPECTION_CONTENTS);
+  if (RCL_RET_OK != ret) {
+    printf("Fail to call rcl_service_configure_service_introspection for result\n");
+  }
+
   // Initialize publishers
   PUBLISHER_INIT(feedback);
   PUBLISHER_INIT(status);
